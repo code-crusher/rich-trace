@@ -1000,6 +1000,17 @@ def test_slice():
         text[::-1]
 
 
+def test_negative_index():
+    # https://github.com/textualize/rich/issues/4237
+    text = Text.from_markup("[bold]hello[/bold]")
+    assert text[-1] == text[4] == Text("o", spans=[Span(0, 1, "bold")])
+    assert text[-5] == text[0] == Text("h", spans=[Span(0, 1, "bold")])
+    with pytest.raises(IndexError):
+        text[-6]
+    with pytest.raises(IndexError):
+        text[5]
+
+
 def test_wrap_invalid_style():
     # https://github.com/textualize/rich/issues/987
     console = Console(width=100, color_system="truecolor")

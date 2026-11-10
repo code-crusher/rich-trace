@@ -198,6 +198,11 @@ class Text(JupyterMixin):
             return text
 
         if isinstance(slice, int):
+            # Index once to preserve IndexError for out of range indexes
+            self.plain[slice]
+            if slice < 0:
+                # Negative indexes are relative to the end of the text
+                slice += len(self.plain)
             return get_text_at(slice)
         else:
             start, stop, step = slice.indices(len(self.plain))
