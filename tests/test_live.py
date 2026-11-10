@@ -168,6 +168,22 @@ def test_live_screen() -> None:
     assert result == expected
 
 
+def test_live_nested() -> None:
+    """Nested Live displays render the inner display below the outer one."""
+    console = create_capture_console()
+    console.begin_capture()
+    outer = Live("outer", console=console, auto_refresh=False)
+    inner = Live("inner", console=console, auto_refresh=False)
+    outer.start()
+    inner.start()
+    inner.refresh()
+    inner.stop()
+    outer.stop()
+    result = console.end_capture()
+    print(repr(result))
+    assert "outer\ninner" in result
+
+
 def test_live_empty() -> None:
     """Regression test for https://github.com/Textualize/rich/issues/3796
 
