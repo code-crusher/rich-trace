@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: master
+          ref: main
       - name: Install FAQtory
         run: pip install FAQtory
       - name: Run Suggest
