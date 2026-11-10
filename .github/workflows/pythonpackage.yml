@@ -16,7 +16,7 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install uv and Python ${{ matrix.python-version }}
         uses: astral-sh/setup-uv@v7
         with:
