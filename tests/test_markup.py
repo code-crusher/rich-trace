@@ -34,7 +34,9 @@ def test_escape():
 
     # Not tags (escape not required)
     assert escape("[5]") == "[5]"
-    assert escape("\\[5]") == "\\[5]"
+    # A backslash before a non-tag bracket must be escaped, as render() strips
+    # one backslash from every "\[" in plain text.
+    assert escape("\\[5]") == "\\\\[5]"
 
     # Test @ escape
     assert escape("[@foo]") == "\\[@foo]"
@@ -65,6 +67,25 @@ def test_render_escape():
     result = console.end_capture()
     expected = r"[red] \[red] \\[red] \\\[red]" + "\n"
     assert result == expected
+
+
+@pytest.mark.parametrize(
+    "plain",
+    [
+        r"\[0-9]",
+        r"pattern: \[0-9]+",
+        r"C:\[Users]",
+        r"a\[b",
+        r"\[",
+        r"\\[0-9]",
+        r"foo[bar]",
+        "[5]",
+        "[bold]x[/bold]",
+    ],
+)
+def test_escape_round_trip(plain):
+    # https://github.com/Textualize/rich/issues/4242
+    assert Text.from_markup(escape(plain)).plain == plain
 
 
 def test_parse():

@@ -47,7 +47,7 @@ _EscapeSubMethod = Callable[[_ReSubCallable, str], str]  # Sub method of a compi
 
 def escape(
     markup: str,
-    _escape: _EscapeSubMethod = re.compile(r"(\\*)(\[[a-z#/@][^[]*?])").sub,
+    _escape: _EscapeSubMethod = re.compile(r"(\\*)(\[)").sub,
 ) -> str:
     """Escapes text so that it won't be interpreted as markup.
 
@@ -61,7 +61,14 @@ def escape(
     def escape_backslashes(match: Match[str]) -> str:
         """Called by re.sub replace matches."""
         backslashes, text = match.groups()
-        return f"{backslashes}{backslashes}\\{text}"
+        if RE_TAGS.match(match.string, match.start()):
+            # A tag is escaped with 2n+1 backslashes (see _parse).
+            return f"{backslashes}{backslashes}\\{text}"
+        if backslashes:
+            # render() removes a backslash from every "\[" in plain text,
+            # so add one to preserve the original backslash.
+            return f"{backslashes}\\{text}"
+        return text
 
     markup = _escape(escape_backslashes, markup)
     if markup.endswith("\\") and not markup.endswith("\\\\"):
