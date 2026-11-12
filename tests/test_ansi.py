@@ -102,3 +102,24 @@ def test_decode_newlines():
     assert Text.from_ansi("Hello\nWorld\n").plain == "Hello\nWorld\n"
     assert Text.from_ansi("Hello\nWorld\n\n").plain == "Hello\nWorld\n\n"
     assert Text.from_ansi("\nHello\nWorld\n\n").plain == "\nHello\nWorld\n\n"
+
+
+@pytest.mark.parametrize(
+    "ansi_text,expected",
+    [
+        # A NUL byte between ESC and "[" must not smuggle a live escape
+        # sequence through to the terminal.
+        # https://github.com/Textualize/rich/issues/4233
+        ("\x1b\x00[2J", ""),
+        ("\x1b\x00\x00\x00[2J", ""),
+        ("\x1b\x00[31mred\x1b[0m", "red"),
+        ("foo\x1b\x00[2Jbar", "foobar"),
+        # Stray NUL bytes are stripped as defense in depth.
+        ("foo\x00bar", "foobar"),
+        # Malformed sequences leave only harmless text behind.
+        ("\x1b[", "["),
+    ],
+)
+def test_decode_strip_nul_escape_sequences(ansi_text: str, expected: str):
+    """Regression test for https://github.com/Textualize/rich/issues/4233"""
+    assert Text.from_ansi(ansi_text).plain == expected

@@ -11,6 +11,11 @@ def test_strip_control_codes():
     assert strip_control_codes("") == ""
     assert strip_control_codes("foo\rbar") == "foobar"
     assert strip_control_codes("Fear is the mind killer") == "Fear is the mind killer"
+    # NUL and ESC are stripped as defense in depth
+    # https://github.com/Textualize/rich/issues/4233
+    assert strip_control_codes("foo\x00bar") == "foobar"
+    assert strip_control_codes("foo\x1bbar") == "foobar"
+    assert strip_control_codes("\x1b\x00[2J") == "[2J"
 
 
 def test_escape_control_codes():
