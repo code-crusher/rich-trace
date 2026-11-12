@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- Added `rich.logging.logging_redirect_stdout_stderr` context manager, which redirects logging handlers writing to `sys.stdout` / `sys.stderr` so that logging doesn't break `Progress` and `Live` displays https://github.com/Textualize/rich/issues/4235
+
 ### Changed
 
 - Dropped support for Python 3.9

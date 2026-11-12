@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import logging
 import os
+import sys
+from contextlib import contextmanager
 from datetime import datetime
 from logging import Handler, LogRecord
 from types import ModuleType
-from typing import TYPE_CHECKING, ClassVar, Iterable
+from typing import TYPE_CHECKING, ClassVar, Iterable, Iterator
 
 if TYPE_CHECKING:
     from ._log_render import FormatTimeCallable
@@ -245,6 +247,59 @@ class RichHandler(Handler):
             link_path=record.pathname if self.enable_link_path else None,
         )
         return log_renderable
+
+
+@contextmanager
+def logging_redirect_stdout_stderr(
+    logger: logging.Logger | None = None,
+) -> Iterator[None]:
+    """Redirect the logging handlers of the given logger (and its ancestors)
+    so that logging doesn't break the live display of a
+    :class:`~rich.progress.Progress` or :class:`~rich.live.Live` context.
+
+    Rich's live displays redirect ``sys.stdout`` and ``sys.stderr`` in order
+    to keep the display intact, but logging handlers hold a reference to the
+    stream they were constructed with, and will keep writing directly to the
+    terminal, corrupting the live display.
+
+    Any handler writing directly to ``sys.stdout`` or ``sys.stderr`` is
+    temporarily replaced with a :class:`RichHandler` which renders log
+    messages *above* the live display. Handlers are restored on exit.
+
+    Args:
+        logger (logging.Logger, optional): The logger whose handlers (and the
+            handlers of its ancestors) should be redirected. Defaults to the
+            root logger.
+    """
+    console = get_console()
+
+    # Collect (logger, handler) pairs of handlers which write directly to
+    # stdout or stderr, searching the given logger and its ancestors.
+    console_handlers: list[tuple[logging.Logger, logging.Handler]] = []
+    current: logging.Logger | None = logger or logging.getLogger()
+    seen: set[int] = set()
+    while current and id(current) not in seen:
+        seen.add(id(current))
+        for handler in current.handlers:
+            if getattr(handler, "stream", None) in (sys.stdout, sys.stderr):
+                console_handlers.append((current, handler))
+        current = current.parent
+
+    redirected: list[tuple[logging.Logger, logging.Handler, RichHandler]] = []
+    for owner, handler in console_handlers:
+        rich_handler = RichHandler(console=console)
+        rich_handler.setFormatter(handler.formatter or logging.Formatter("%(message)s"))
+        rich_handler.setLevel(handler.level)
+        owner.removeHandler(handler)
+        owner.addHandler(rich_handler)
+        redirected.append((owner, handler, rich_handler))
+
+    try:
+        yield
+    finally:
+        for owner, handler, rich_handler in redirected:
+            owner.removeHandler(rich_handler)
+            owner.addHandler(handler)
 
 
 if __name__ == "__main__":  # pragma: no cover
