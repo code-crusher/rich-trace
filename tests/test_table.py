@@ -1,5 +1,6 @@
 # encoding=utf-8
 
+import copy
 import io
 from textwrap import dedent
 
@@ -299,8 +300,12 @@ def test_section():
 def test_placement_table_box_elements(show_header, show_footer, expected):
     """Ensure box drawing characters correctly positioned."""
 
+    # Copy the shared box.ASCII singleton, as it is mutated below
     table = Table(
-        box=box.ASCII, show_header=show_header, show_footer=show_footer, padding=0
+        box=copy.deepcopy(box.ASCII),
+        show_header=show_header,
+        show_footer=show_footer,
+        padding=0,
     )
 
     # content rows indicated by numerals, pure dividers by letters
@@ -353,6 +358,10 @@ def test_placement_table_box_elements(show_header, show_footer, expected):
     print(repr(output))
 
     assert output == expected
+
+    # Regression test for https://github.com/Textualize/rich/issues/4223
+    # The shared box.ASCII singleton must not be mutated by this test.
+    assert box.ASCII.get_row(widths=[1], level="row") == "|-|"
 
 
 def test_columns_highlight_added_by_add_row() -> None:
