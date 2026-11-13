@@ -134,6 +134,37 @@ def test_syntax_error():
     assert "SyntaxError" in exception_text
 
 
+def test_syntax_error_non_string_message():
+    """A SyntaxError with a non-string message should render without error.
+
+    See https://github.com/Textualize/rich/issues/4225
+    """
+    console = Console(width=100, file=io.StringIO())
+    try:
+        raise SyntaxError(Exception("syntax error"))
+    except SyntaxError:
+        console.print_exception()
+    exception_text = console.file.getvalue()
+    assert "SyntaxError" in exception_text
+    assert "syntax error" in exception_text
+
+
+def test_syntax_error_message_str_fails():
+    """A SyntaxError message whose str() raises should still render."""
+    console = Console(width=100, file=io.StringIO())
+
+    class BadMessage:
+        def __str__(self):
+            raise ValueError("no string for you")
+
+    try:
+        raise SyntaxError(BadMessage())
+    except SyntaxError:
+        console.print_exception()
+    exception_text = console.file.getvalue()
+    assert "<exception str() failed>" in exception_text
+
+
 def test_nested_exception():
     console = Console(width=100, file=io.StringIO())
     value_error_message = "ValueError because of ZeroDivisionError"

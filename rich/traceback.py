@@ -502,7 +502,7 @@ class Traceback:
                     filename=exc_value.filename or "?",
                     lineno=exc_value.lineno or 0,
                     line=exc_value.text or "",
-                    msg=exc_value.msg,
+                    msg=safe_str(exc_value.msg),
                     notes=notes,
                 )
 
