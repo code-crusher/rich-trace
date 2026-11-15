@@ -15,8 +15,8 @@ _console: "Console | None" = None
 
 try:
     _IMPORT_CWD = os.path.abspath(os.getcwd())
-except FileNotFoundError:
-    # Can happen if the cwd has been deleted
+except OSError:
+    # Can happen if the cwd has been deleted or is inaccessible
     _IMPORT_CWD = ""
 
 
