@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for Python 3.15
 - Switched from Poetry to uv for packaging and development
 
+### Fixed
+
+- Fixed `Console.save_text`, `save_html`, and `save_svg` clearing the record buffer when writing the file fails https://github.com/Textualize/rich/issues/4208
+
 ## [15.0.0] - 2026-04-12
 
 ### Changed

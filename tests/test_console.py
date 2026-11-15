@@ -594,6 +594,40 @@ def test_save_html() -> None:
             assert html == expected
 
 
+@pytest.mark.parametrize("method_name", ["save_text", "save_html", "save_svg"])
+def test_save_failure_preserves_record(method_name: str) -> None:
+    """The record buffer should survive a failed save (issue #4208)."""
+    console = Console(record=True)
+    console.print("IMPORTANT OUTPUT")
+    with tempfile.TemporaryDirectory() as path:
+        export_path = os.path.join(path, "missing", "output.txt")
+        with pytest.raises(FileNotFoundError):
+            getattr(console, method_name)(export_path)
+    assert console.export_text(clear=False) == "IMPORTANT OUTPUT\n"
+
+
+@pytest.mark.parametrize("method_name", ["save_text", "save_html", "save_svg"])
+def test_save_success_clears_record(method_name: str) -> None:
+    console = Console(record=True)
+    console.print("foo")
+    with tempfile.TemporaryDirectory() as path:
+        export_path = os.path.join(path, "output.txt")
+        getattr(console, method_name)(export_path)
+        assert os.path.isfile(export_path)
+    assert console.export_text(clear=False) == ""
+
+
+@pytest.mark.parametrize("method_name", ["save_text", "save_html", "save_svg"])
+def test_save_with_clear_false_preserves_record(method_name: str) -> None:
+    console = Console(record=True)
+    console.print("foo")
+    with tempfile.TemporaryDirectory() as path:
+        export_path = os.path.join(path, "output.txt")
+        getattr(console, method_name)(export_path, clear=False)
+        assert os.path.isfile(export_path)
+    assert console.export_text(clear=False) == "foo\n"
+
+
 def test_no_wrap() -> None:
     console = Console(width=10, file=io.StringIO())
     console.print("foo bar baz egg", no_wrap=True)
