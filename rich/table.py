@@ -12,7 +12,7 @@ from .padding import Padding, PaddingDimensions
 from .protocol import is_renderable
 from .segment import Segment
 from .style import Style, StyleType
-from .text import Text, TextType
+from .text import Text
 
 if TYPE_CHECKING:
     from .console import (
@@ -145,8 +145,8 @@ class Table(JupyterMixin):
 
     Args:
         *headers (Column | str): Column headers, either as a string, or :class:`~rich.table.Column` instance.
-        title (str | Text, optional): The title of the table rendered at the top. Defaults to None.
-        caption (str | Text, optional): The table caption rendered below. Defaults to None.
+        title (RenderableType | None, optional): The title of the table rendered at the top. Defaults to None.
+        caption (RenderableType | None, optional): The table caption rendered below. Defaults to None.
         width (int, optional): The width in characters of the table, or ``None`` to automatically fit. Defaults to None.
         min_width (int | None, optional): The minimum width of the table, or ``None`` for no minimum. Defaults to None.
         box (box.Box, optional): One of the constants in box.py used to draw the edges (see :ref:`appendix_box`), or ``None`` for no box lines. Defaults to box.HEAVY_HEAD.
@@ -178,8 +178,8 @@ class Table(JupyterMixin):
     def __init__(
         self,
         *headers: Column | str,
-        title: TextType | None = None,
-        caption: TextType | None = None,
+        title: "RenderableType | None" = None,
+        caption: "RenderableType | None" = None,
         width: int | None = None,
         min_width: int | None = None,
         box: box.Box | None = box.HEAVY_HEAD,
@@ -485,12 +485,14 @@ class Table(JupyterMixin):
         )
 
         def render_annotation(
-            text: TextType, style: StyleType, justify: "JustifyMethod" = "center"
+            renderable: "RenderableType",
+            style: StyleType,
+            justify: "JustifyMethod" = "center",
         ) -> "RenderResult":
             render_text = (
-                console.render_str(text, style=style, highlight=False)
-                if isinstance(text, str)
-                else text
+                console.render_str(renderable, style=style, highlight=False)
+                if isinstance(renderable, str)
+                else renderable
             )
             return console.render(
                 render_text, options=render_options.update(justify=justify)

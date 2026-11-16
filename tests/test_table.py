@@ -8,6 +8,7 @@ import pytest
 from rich import box, errors
 from rich.console import Console
 from rich.measure import Measurement
+from rich.rule import Rule
 from rich.style import Style
 from rich.table import Column, Table
 from rich.text import Text
@@ -91,6 +92,27 @@ def test_render_table():
     result = render_tables()
     print(repr(result))
     assert result == expected
+
+
+def test_renderable_title_and_caption():
+    """A non-str renderable (e.g. Rule) may be used as title or caption."""
+    console = Console(record=True, force_terminal=True, color_system=None)
+    table = Table(title=Rule("TITLE"), caption=Rule("CAPTION"))
+    table.add_column("col")
+    table.add_row("data")
+    console.print(table)
+    output = console.export_text()
+    print(repr(output))
+    expected = (
+        "─ TIT… ─\n"
+        "┏━━━━━━┓\n"
+        "┃ col  ┃\n"
+        "┡━━━━━━┩\n"
+        "│ data │\n"
+        "└──────┘\n"
+        "─ CAP… ─\n"
+    )
+    assert output == expected
 
 
 def test_not_renderable():
