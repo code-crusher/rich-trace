@@ -434,4 +434,6 @@ The environment variable ``TTY_INTERACTIVE`` is used to override Rich's auto-det
 
 If ``width`` / ``height`` arguments are not explicitly provided as arguments to ``Console`` then the environment variables ``COLUMNS`` / ``LINES`` can be used to set the console width / height. ``JUPYTER_COLUMNS`` / ``JUPYTER_LINES`` behave similarly and are used in Jupyter.
 
+The environment variable ``RICH_AMBIGUOUS_WIDTH`` controls how characters with East Asian Width "Ambiguous" (such as ``…`` or ``“``) are measured. Such characters are rendered as 2 cells wide on CJK terminals but as 1 cell elsewhere. The default is ``1``, matching the Unicode standard and ``wcwidth``. Set ``RICH_AMBIGUOUS_WIDTH`` to ``\"2\"`` to measure them as 2 cells, which is what CJK terminals display. Note that box-drawing and many other commonly used symbols are also ambiguous-width, so this affects the measured width of those characters too. The variable is read when the ``rich`` package is imported.
+
 Note that environment variables set defaults in the Console object. If you explicitly set any variables in the constructor then these will take precedence.

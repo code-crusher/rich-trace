@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import os
 import string
+import subprocess
+import sys
+import textwrap
 
 import pytest
 
@@ -24,6 +28,10 @@ from rich.cells import (
         ("a", 1),
         ("💩", 2),
         (chr(917999 + 1), 0),
+        # East Asian Ambiguous characters are 1 cell by default (western terminal)
+        ("\u2026", 1),  # HORIZONTAL ELLIPSIS
+        ("\u201c", 1),  # LEFT DOUBLE QUOTATION MARK
+        ("\u201d", 1),  # RIGHT DOUBLE QUOTATION MARK
     ],
 )
 def test_get_character_cell_size(character: str, size: int) -> None:
@@ -252,3 +260,63 @@ def test_non_printable():
     for ordinal in range(31):
         character = chr(ordinal)
         assert cell_len(character) == 0
+
+
+def _run_with_ambiguous_width(code: str) -> str:
+    """Run a snippet in a subprocess with RICH_AMBIGUOUS_WIDTH=2 set.
+
+    The flag is read at import time, so it can only be exercised in a fresh interpreter.
+    """
+    env = dict(os.environ)
+    env["RICH_AMBIGUOUS_WIDTH"] = "2"
+    result = subprocess.run(
+        [sys.executable, "-c", textwrap.dedent(code)],
+        env=env,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return result.stdout.strip()
+
+
+def test_ambiguous_width_env_var_widens_ambiguous_chars() -> None:
+    """CJK terminals render East Asian Ambiguous characters as 2 cells."""
+    output = _run_with_ambiguous_width("""
+        from rich.cells import cell_len, get_character_cell_size, _is_single_cell_widths
+        for ch in ["\\u2026", "\\u201c", "\\u201d"]:
+            print(get_character_cell_size(ch))
+        print(cell_len("a\\u2026b"))
+        print(int(_is_single_cell_widths("abc")))
+        print(int(_is_single_cell_widths("ab\\u2026")))
+        """)
+    assert output.splitlines() == ["2", "2", "2", "4", "1", "0"]
+
+
+def test_ambiguous_width_env_var_does_not_affect_narrow_chars() -> None:
+    """Non-ambiguous characters keep their default widths in wide mode."""
+    output = _run_with_ambiguous_width("""
+        from rich.cells import cell_len, get_character_cell_size
+        print(get_character_cell_size("a"))
+        print(get_character_cell_size("あ"))
+        print(cell_len("abc"))
+        print(cell_len("a\\u2026"))  # one narrow + one wide
+        print(cell_len("\u2026\ufe0f"))
+        """)
+    assert output.splitlines() == ["1", "2", "3", "3", "2"]
+
+
+def test_ambiguous_width_env_var_invalid_value_is_ignored() -> None:
+    env = dict(os.environ)
+    env["RICH_AMBIGUOUS_WIDTH"] = "banana"
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "from rich.cells import get_character_cell_size; print(get_character_cell_size('\\u2026'))",
+        ],
+        env=env,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert result.stdout.strip() == "1"

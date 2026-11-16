@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for Python 3.15
 - Switched from Poetry to uv for packaging and development
 
+### Added
+
+- Added `RICH_AMBIGUOUS_WIDTH` environment variable. Set it to `2` to render East Asian Ambiguous characters (such as U+2026 HORIZONTAL ELLIPSIS or U+201C/U+201D QUOTATION MARKS) as 2 cells wide, matching CJK terminals (which is how they are rendered there). The default remains 1 cell, matching the Unicode standard and `wcwidth`. Addresses https://github.com/Textualize/rich/issues/4197
+
 ## [15.0.0] - 2026-04-12
 
 ### Changed

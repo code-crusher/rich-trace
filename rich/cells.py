@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import os
+import unicodedata
 from functools import lru_cache
 from operator import itemgetter
-from typing import Callable, NamedTuple, Sequence
+from typing import NamedTuple, Sequence
 
 from rich._unicode_data import load as load_cell_table
 
@@ -30,9 +32,58 @@ _SINGLE_CELLS = frozenset(
     ]
 )
 
-# When called with a string this will return True if all
-# characters are single-cell, otherwise False
-_is_single_cell_widths: Callable[[str], bool] = _SINGLE_CELLS.issuperset
+# Characters with East Asian Width "Ambiguous" (e.g. U+2026 HORIZONTAL ELLIPSIS,
+# U+201C/U+201D DOUBLE QUOTATION MARKS) are rendered as 2 cells on CJK terminals,
+# but as 1 cell elsewhere. By default rich assumes a western terminal (1 cell);
+# set the ``RICH_AMBIGUOUS_WIDTH`` environment variable to ``2`` (or ``double``
+# or ``wide``) to opt in to CJK behaviour.
+#
+# This is read once at import time; changing the variable after import has no effect.
+_AMBIGUOUS_IS_WIDE = os.environ.get("RICH_AMBIGUOUS_WIDTH", "").strip().lower() in (
+    "2",
+    "double",
+    "wide",
+)
+
+
+def _ambiguous_cell_size(character: str) -> int:
+    """Cell size for a character not covered by the width tables.
+
+    East Asian Ambiguous characters are 2 cells on CJK terminals (when wide
+    mode is enabled), otherwise 1 cell.
+    """
+    if _AMBIGUOUS_IS_WIDE and unicodedata.east_asian_width(character) == "A":
+        return 2
+    return 1
+
+
+# When the terminal renders ambiguous-width characters as wide (CJK), the
+# single-cell set excludes characters whose East Asian Width is "Ambiguous",
+# so the common case stays a fast frozenset lookup.
+if _AMBIGUOUS_IS_WIDE:
+    _SINGLE_CELLS = frozenset(
+        character
+        for character in _SINGLE_CELLS
+        if unicodedata.east_asian_width(character) != "A"
+    )
+
+
+def _is_single_cell_widths(text: str) -> bool:
+    return _SINGLE_CELLS.issuperset(text)
+
+
+def _vs16_cell_extra(cell_table: CellTable, character: str) -> int:
+    """Extra cells added by a trailing U+FE0F (variation selector-16).
+
+    A narrow character in ``narrow_to_wide`` becomes 2 cells with VS16. If the
+    character is already rendered 2 cells wide (because it is an East Asian
+    Ambiguous character and wide ambiguous mode is enabled), no extra cell is added.
+    """
+    if character not in cell_table.narrow_to_wide:
+        return 0
+    if _AMBIGUOUS_IS_WIDE and unicodedata.east_asian_width(character) == "A":
+        return 0
+    return 1
 
 
 class CellTable(NamedTuple):
@@ -61,7 +112,7 @@ def get_character_cell_size(character: str, unicode_version: str = "auto") -> in
 
     last_entry = table[-1]
     if codepoint > last_entry[1]:
-        return 1
+        return _ambiguous_cell_size(character)
 
     lower_bound = 0
     upper_bound = len(table) - 1
@@ -75,7 +126,7 @@ def get_character_cell_size(character: str, unicode_version: str = "auto") -> in
             lower_bound = index + 1
         else:
             return width
-    return 1
+    return _ambiguous_cell_size(character)
 
 
 @lru_cache(4096)
@@ -147,7 +198,7 @@ def _cell_len(text: str, unicode_version: str) -> int:
             if character == "\u200d":
                 index += 1
             elif last_measured_character:
-                total_width += last_measured_character in cell_table.narrow_to_wide
+                total_width += _vs16_cell_extra(cell_table, last_measured_character)
                 last_measured_character = None
         else:
             if character_width := get_character_cell_size(character, unicode_version):
@@ -202,10 +253,11 @@ def split_graphemes(
                 index += 1
                 if last_measured_character:
                     start, _end, cell_length = spans[-1]
-                    if last_measured_character in cell_table.narrow_to_wide:
-                        last_measured_character = None
-                        cell_length += 1
-                        total_width += 1
+                    extra = _vs16_cell_extra(cell_table, last_measured_character)
+                    if extra:
+                        cell_length += extra
+                        total_width += extra
+                    last_measured_character = None
                     spans[-1] = (start, index, cell_length)
                 else:
                     # No previous character to change the size of.
