@@ -540,14 +540,15 @@ def test_wrap_overflow():
     assert (len(lines)) == 3
     assert lines[0] == Text("Some")
     assert lines[1] == Text("more")
-    assert lines[2] == Text("wor…")
+    # The ellipsis is an ambiguous-width character, which is two cells wide.
+    assert lines[2] == Text("wo…")
 
 
 def test_wrap_overflow_long():
     text = Text("bigword" * 10)
     lines = text.wrap(Console(), 4, overflow="ellipsis")
     assert len(lines) == 1
-    assert lines[0] == Text("big…")
+    assert lines[0] == Text("bi…")
 
 
 def test_wrap_long_words():
@@ -900,9 +901,9 @@ def test_get_style_at_offset():
     [
         ("Hello", 10, "Hello"),
         ("Hello", 5, "Hello"),
-        ("Hello", 4, "Hel…"),
-        ("Hello", 3, "He…"),
-        ("Hello", 2, "H…"),
+        ("Hello", 4, "He…"),
+        ("Hello", 3, "H…"),
+        ("Hello", 2, "…"),
         ("Hello", 1, "…"),
     ],
 )
@@ -917,7 +918,7 @@ def test_truncate_ellipsis(input, count, expected):
     [
         ("Hello", 5, "Hello"),
         ("Hello", 10, "Hello     "),
-        ("Hello", 3, "He…"),
+        ("Hello", 3, "H…"),
     ],
 )
 def test_truncate_ellipsis_pad(input, count, expected):

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Fixed
+
+- Fixed East Asian Width ambiguous characters being measured as a single cell, which misaligned text on CJK terminals https://github.com/Textualize/rich/issues/4199
+
 ### Changed
 
 - Dropped support for Python 3.9

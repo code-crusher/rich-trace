@@ -863,7 +863,15 @@ class Text(JupyterMixin):
             length = cell_len(self.plain)
             if length > max_width:
                 if _overflow == "ellipsis":
-                    self.plain = set_cell_size(self.plain, max_width - 1) + "…"
+                    ellipsis = "…"
+                    # The ellipsis may be more than one cell wide (ambiguous-width
+                    # characters are two cells on CJK terminals).
+                    self.plain = (
+                        set_cell_size(
+                            self.plain, max(0, max_width - cell_len(ellipsis))
+                        )
+                        + ellipsis
+                    )
                 else:
                     self.plain = set_cell_size(self.plain, max_width)
             if pad and length < max_width:

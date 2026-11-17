@@ -31,6 +31,42 @@ def test_get_character_cell_size(character: str, size: int) -> None:
     assert get_character_cell_size(character) == size
 
 
+@pytest.mark.parametrize(
+    "character,size",
+    [
+        # East Asian Width "A" (ambiguous) characters are two cells wide,
+        # as they are rendered by most CJK terminals.
+        ("\u2026", 2),  # HORIZONTAL ELLIPSIS
+        ("\u201c", 2),  # LEFT DOUBLE QUOTATION MARK
+        ("\u201d", 2),  # RIGHT DOUBLE QUOTATION MARK
+        ("\u2014", 2),  # EM DASH
+        ("\u2192", 2),  # RIGHTWARDS ARROW
+        ("\u2605", 2),  # BLACK STAR
+        # Ambiguous characters in the single-cell fast path stay one cell,
+        # to remain consistent with cell_len.
+        ("\u2500", 1),  # BOX DRAWINGS LIGHT HORIZONTAL
+        ("\u03b1", 1),  # GREEK SMALL LETTER ALPHA
+        ("\u00b1", 1),  # PLUS-MINUS SIGN
+        # Private-use and format characters have no defined width, and are
+        # commonly rendered as a single cell (e.g. nerd font glyphs).
+        ("\ue0b0", 1),
+        ("\U000f024d", 1),
+        ("\xad", 1),  # SOFT HYPHEN
+    ],
+)
+def test_ambiguous_width(character: str, size: int) -> None:
+    """Ambiguous-width characters are measured as two cells on CJK terminals."""
+    assert get_character_cell_size(character) == size
+    assert cell_len(character) == size
+
+
+def test_ambiguous_width_variation_selector() -> None:
+    """A variation selector must not add width to an already double-width character."""
+    assert get_character_cell_size("\u2122") == 2
+    assert cell_len("\u2122\ufe0f") == 2
+    assert split_graphemes("\u2122\ufe0f") == ([(0, 2, 2)], 2)
+
+
 def test_cell_len_long_string():
     # Long strings don't use cached cell length implementation
     assert cells.cell_len("abc" * 200) == 3 * 200

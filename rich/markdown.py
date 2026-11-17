@@ -12,6 +12,7 @@ from rich.table import Table
 from . import box
 from ._loop import loop_first
 from ._stack import Stack
+from .cells import cell_len
 from .console import Console, ConsoleOptions, JustifyMethod, RenderResult
 from .containers import Renderables
 from .jupyter import JupyterMixin
@@ -382,12 +383,14 @@ class ListItem(TextElement):
         return False
 
     def render_bullet(self, console: Console, options: ConsoleOptions) -> RenderResult:
-        render_options = options.update(width=options.max_width - 3)
-        lines = console.render_lines(self.elements, render_options, style=self.style)
         bullet_style = console.get_style("markdown.item.bullet", default="none")
+        bullet_text = " • "
+        bullet_width = cell_len(bullet_text)
+        render_options = options.update(width=options.max_width - bullet_width)
+        lines = console.render_lines(self.elements, render_options, style=self.style)
 
-        bullet = Segment(" • ", bullet_style)
-        padding = Segment(" " * 3, bullet_style)
+        bullet = Segment(bullet_text, bullet_style)
+        padding = Segment(" " * bullet_width, bullet_style)
         new_line = Segment("\n")
         for first, line in loop_first(lines):
             yield bullet if first else padding

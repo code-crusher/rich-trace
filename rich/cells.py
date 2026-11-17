@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import unicodedata
 from functools import lru_cache
 from operator import itemgetter
 from typing import Callable, NamedTuple, Sequence
@@ -57,6 +58,11 @@ def get_character_cell_size(character: str, unicode_version: str = "auto") -> in
     codepoint = ord(character)
     if codepoint and codepoint < 32 or 0x07F <= codepoint < 0x0A0:
         return 0
+    if character in _SINGLE_CELLS:
+        # Fast path for characters known to be narrow, even if they are
+        # East Asian Width ambiguous. This keeps the result consistent with
+        # the `_is_single_cell_widths` fast path used by `cell_len`.
+        return 1
     table = load_cell_table(unicode_version).widths
 
     last_entry = table[-1]
@@ -75,6 +81,28 @@ def get_character_cell_size(character: str, unicode_version: str = "auto") -> in
             lower_bound = index + 1
         else:
             return width
+    # Not covered by the width table, so fall back to the East Asian Width.
+    # Ambiguous characters are rendered as two cells by many CJK terminals.
+    if unicodedata.east_asian_width(character) == "A":
+        # Private-use and format characters have no defined width, and are
+        # commonly rendered as a single cell (e.g. nerd font glyphs).
+        if unicodedata.category(character) not in ("Co", "Cf"):
+            return 2
+    return 1
+
+
+def _vs16_extra_width(character: str, unicode_version: str) -> int:
+    """Extra cells added by a variation selector-16 (U+FE0F).
+
+    A narrow character in ``narrow_to_wide`` is rendered as two cells when
+    followed by U+FE0F. If the character is already two cells wide (an East
+    Asian Ambiguous character, which is wide on CJK terminals), there is no
+    extra width to add.
+    """
+    if character not in load_cell_table(unicode_version).narrow_to_wide:
+        return 0
+    if get_character_cell_size(character, unicode_version) == 2:
+        return 0
     return 1
 
 
@@ -132,7 +160,6 @@ def _cell_len(text: str, unicode_version: str) -> int:
             get_character_cell_size(character, unicode_version) for character in text
         )
 
-    cell_table = load_cell_table(unicode_version)
     total_width = 0
     last_measured_character: str | None = None
 
@@ -147,7 +174,9 @@ def _cell_len(text: str, unicode_version: str) -> int:
             if character == "\u200d":
                 index += 1
             elif last_measured_character:
-                total_width += last_measured_character in cell_table.narrow_to_wide
+                total_width += _vs16_extra_width(
+                    last_measured_character, unicode_version
+                )
                 last_measured_character = None
         else:
             if character_width := get_character_cell_size(character, unicode_version):
@@ -176,7 +205,6 @@ def split_graphemes(
             and CELL LENGTH is the cell length of the single grapheme.
     """
 
-    cell_table = load_cell_table(unicode_version)
     codepoint_count = len(text)
     index = 0
     last_measured_character: str | None = None
@@ -202,10 +230,12 @@ def split_graphemes(
                 index += 1
                 if last_measured_character:
                     start, _end, cell_length = spans[-1]
-                    if last_measured_character in cell_table.narrow_to_wide:
-                        last_measured_character = None
-                        cell_length += 1
-                        total_width += 1
+                    extra_width = _vs16_extra_width(
+                        last_measured_character, unicode_version
+                    )
+                    last_measured_character = None
+                    cell_length += extra_width
+                    total_width += extra_width
                     spans[-1] = (start, index, cell_length)
                 else:
                     # No previous character to change the size of.

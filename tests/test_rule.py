@@ -22,7 +22,7 @@ def test_rule():
     expected = "\x1b[92m────────────────\x1b[0m\n"
     expected += "\x1b[92m───── \x1b[0mfoo\x1b[92m ──────\x1b[0m\n"
     expected += "\x1b[92m───── \x1b[0m\x1b[1mfoo\x1b[0m\x1b[92m ──────\x1b[0m\n"
-    expected += "\x1b[92m─ \x1b[0mfoobarbazeg…\x1b[92m ─\x1b[0m\n"
+    expected += "\x1b[92m─ \x1b[0mfoobarbaze…\x1b[92m ─\x1b[0m\n"
 
     result = console.file.getvalue()
     assert result == expected
@@ -65,8 +65,8 @@ def test_rule_cjk():
     "align,outcome",
     [
         ("center", "───\n"),
-        ("left", "… ─\n"),
-        ("right", "─ …\n"),
+        ("left", "… \n"),
+        ("right", " …\n"),
     ],
 )
 def test_rule_not_enough_space_for_title_text(align, outcome):
@@ -91,9 +91,9 @@ def test_rule_side_aligned_not_enough_space_for_rule(align):
 @pytest.mark.parametrize(
     "align,outcome",
     [
-        ("center", "─ … ─\n"),
-        ("left", "AB… ─\n"),
-        ("right", "─ AB…\n"),
+        ("center", " … ─\n"),
+        ("left", "A… ─\n"),
+        ("right", "─ A…\n"),
     ],
 )
 def test_rule_just_enough_width_available_for_title(align, outcome):
