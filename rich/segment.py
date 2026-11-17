@@ -316,6 +316,7 @@ class Segment(NamedTuple):
 
         adjust_line_length = cls.adjust_line_length
         new_line_segment = cls("\n")
+        line_length = 0
 
         for segment in segments:
             if "\n" in segment.text and not segment.control:
@@ -323,19 +324,25 @@ class Segment(NamedTuple):
                 while text:
                     _text, new_line, text = text.partition("\n")
                     if _text:
-                        append(cls(_text, segment_style))
+                        _segment = cls(_text, segment_style)
+                        append(_segment)
+                        line_length += _segment.cell_length
                     if new_line:
                         cropped_line = adjust_line_length(
-                            line, length, style=style, pad=pad
+                            line, length, style=style, pad=pad, line_length=line_length
                         )
                         if include_new_lines:
                             cropped_line.append(new_line_segment)
                         yield cropped_line
                         line.clear()
+                        line_length = 0
             else:
                 append(segment)
+                line_length += segment.cell_length
         if line:
-            yield adjust_line_length(line, length, style=style, pad=pad)
+            yield adjust_line_length(
+                line, length, style=style, pad=pad, line_length=line_length
+            )
 
     @classmethod
     def adjust_line_length(
@@ -344,6 +351,7 @@ class Segment(NamedTuple):
         length: int,
         style: Style | None = None,
         pad: bool = True,
+        line_length: int | None = None,
     ) -> list["Segment"]:
         """Adjust a line to a given width (cropping or padding as required).
 
@@ -352,11 +360,14 @@ class Segment(NamedTuple):
             length (int): The desired width of the line.
             style (Style, optional): The style of padding if used (space on the end). Defaults to None.
             pad (bool, optional): Pad lines with spaces if they are shorter than `length`. Defaults to True.
+            line_length (int, optional): The width of the line in cells, if already known.
+                Enables callers on a hot path to avoid recalculating it. Defaults to None (calculated).
 
         Returns:
             list[Segment]: A line of segments with the desired length.
         """
-        line_length = sum(segment.cell_length for segment in line)
+        if line_length is None:
+            line_length = sum(segment.cell_length for segment in line)
         new_line: list[Segment]
 
         if line_length < length:
@@ -437,9 +448,13 @@ class Segment(NamedTuple):
         )
 
         adjust_line_length = cls.adjust_line_length
+        get_line_length = cls.get_line_length
         shaped_lines = lines[:_height]
         shaped_lines[:] = [
-            adjust_line_length(line, width, style=style) for line in lines
+            adjust_line_length(
+                line, width, style=style, line_length=get_line_length(line)
+            )
+            for line in lines
         ]
         if len(shaped_lines) < _height:
             shaped_lines.extend([blank] * (_height - len(shaped_lines)))

@@ -59,6 +59,16 @@ def test_split_and_crop_lines():
     ]
 
 
+def test_split_and_crop_lines_unicode():
+    assert list(
+        Segment.split_and_crop_lines([Segment("ab\ncd\n"), Segment("💩")], 4)
+    ) == [
+        [Segment("ab"), Segment("  "), Segment("\n", None)],
+        [Segment("cd"), Segment("  "), Segment("\n", None)],
+        [Segment("💩"), Segment("  ")],
+    ]
+
+
 def test_adjust_line_length():
     line = [Segment("Hello", "foo")]
     assert Segment.adjust_line_length(line, 10, style="bar") == [
@@ -73,6 +83,30 @@ def test_adjust_line_length():
     assert Segment.adjust_line_length(line, 5) == line
 
 
+def test_adjust_line_length_precomputed_length():
+    """A precomputed line_length gives the same result as calculating it."""
+    line = [Segment("Hello", "foo"), Segment("💩", "baz")]
+    for length in range(0, 12):
+        assert Segment.adjust_line_length(
+            line, length, style="bar", line_length=7
+        ) == Segment.adjust_line_length(line, length, style="bar")
+
+
+def test_adjust_line_length_incorrect_length():
+    """The caller is responsible for the accuracy of a precomputed line_length."""
+    line = [Segment("Hello")]
+    # too small: the line is assumed shorter than it is
+    assert Segment.adjust_line_length(line, 3, line_length=2) == [
+        Segment("Hello"),
+        Segment(" "),
+    ]
+    # too large: padding underestimates and the line overflows
+    assert Segment.adjust_line_length(line, 10, line_length=6) == [
+        Segment("Hello"),
+        Segment("    "),
+    ]
+
+
 def test_get_line_length():
     assert Segment.get_line_length([Segment("foo"), Segment("bar")]) == 6
 
@@ -80,6 +114,11 @@ def test_get_line_length():
 def test_get_shape():
     assert Segment.get_shape([[Segment("Hello")]]) == (5, 1)
     assert Segment.get_shape([[Segment("Hello")], [Segment("World!")]]) == (6, 2)
+
+
+def test_get_shape_control_codes_ignored():
+    home = (ControlType.HOME, 0)
+    assert Segment.get_shape([[Segment("foo", None, [home]), Segment("bar")]]) == (3, 1)
 
 
 def test_set_shape():

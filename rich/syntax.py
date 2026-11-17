@@ -749,6 +749,7 @@ class Syntax(JupyterMixin):
                             render_options.max_width,
                             style=background_style,
                             pad=not transparent_background,
+                            line_length=line.cell_len,
                         )
                     ]
 
