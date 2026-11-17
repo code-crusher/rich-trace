@@ -72,6 +72,20 @@ def test_set_cell_size_infinite():
         )
 
 
+def test_set_cell_size_beyond_grapheme_width():
+    # cell_len() can report a width beyond the last grapheme span when
+    # zero-width joiners are involved, and set_cell_size() must not crash
+    # in that case. See https://github.com/Textualize/rich/issues/4239
+    zwj = "\u200d"
+    text = zwj + zwj + "👩界क�a👩"
+    assert cells.set_cell_size(text, 8) == text
+    assert cells.set_cell_size("👩" + zwj + "💻", 6) == "👩" + zwj + "💻    "
+    assert cells.set_cell_size(zwj + zwj, 3) == zwj + zwj + "   "
+    assert cells.set_cell_size(zwj + zwj + "👩", 1) == zwj + zwj + "👩"
+    assert split_text(zwj + zwj, 5) == (zwj + zwj, "")
+    assert split_text("👩" + zwj + "💻", 6) == ("👩" + zwj + "💻", "")
+
+
 FM = "👩\u200d🔧"
 
 

@@ -251,6 +251,10 @@ def _split_text(
         return "", text
 
     spans, cell_length = split_graphemes(text, unicode_version)
+    if cell_length == 0:
+        # Text has no measurable width (e.g. only zero width joiners),
+        # so the whole text fits on the left.
+        return text, ""
 
     # Guess initial offset
     offset = int((cell_position / cell_length) * len(spans))
@@ -263,6 +267,11 @@ def _split_text(
             split_index = spans[offset][0]
             return text[:split_index], text[split_index:]
         if left_size < cell_position:
+            if offset >= len(spans):
+                # cell_position is beyond the width of the text in graphemes.
+                # Grapheme widths and `cell_len` can disagree (e.g. for
+                # zero-width joiner sequences), so the whole text fits on the left.
+                return text, ""
             start, end, cell_size = spans[offset]
             if left_size + cell_size > cell_position:
                 return text[:start] + " ", " " + text[end:]
