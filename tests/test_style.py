@@ -124,6 +124,37 @@ def test_link_id():
     assert len(style.link_id) > 1
 
 
+def test_add_distinct_link_ids_for_equal_link_styles():
+    """Two equal styles with links must keep distinct link ids when combined.
+
+    Regression test for the ``_add`` cache conflating styles that compare equal
+    but carry different link ids.
+    """
+    s1 = Style(link="https://example.com")
+    s2 = Style(link="https://example.com")
+    assert s1 == s2  # same hash and content
+    assert s1.link_id != s2.link_id  # but distinct link ids
+
+    base = Style(bold=True)
+    assert (base + s1).link_id != (base + s2).link_id
+
+
+def test_add_preserves_link_id_with_identical_meta():
+    """Two equal styles from meta must each keep their own link id when combined.
+
+    Regression test for Textualize/textual#1587.
+    """
+    meta = {"click": "something"}
+    s1 = Style.from_meta(meta)
+    s2 = Style.from_meta(meta)
+    assert s1.link_id != s2.link_id  # precondition: distinct ids
+
+    base = Style(color="red")
+    assert (base + s1).link_id == s1.link_id
+    assert (base + s2).link_id == s2.link_id
+    assert (base + s1).link_id != (base + s2).link_id
+
+
 def test_get_html_style():
     expected = "color: #7f7fbf; text-decoration-color: #7f7fbf; background-color: #800000; font-weight: bold; font-style: italic; text-decoration: underline; text-decoration: line-through; text-decoration: overline"
     html_style = Style(
@@ -207,6 +238,15 @@ def test_without_color():
     assert colorless_style.bold == True
     null_style = Style.null()
     assert null_style.without_color == null_style
+
+
+def test_without_color_preserves_link_id():
+    """Removing color must not change the link id, so the link stays intact."""
+    style = Style(bold=True, color="red", link="https://example.org")
+    colorless_style = style.without_color
+    assert colorless_style.color is None
+    assert colorless_style.link == "https://example.org"
+    assert colorless_style.link_id == style.link_id
 
 
 def test_meta():
