@@ -435,6 +435,72 @@ def test_padding_plus_wrap() -> None:
     assert output == expected
 
 
+def test_word_wrap_batch_render() -> None:
+    """Word wrapping without line numbers renders lines in a single batch.
+
+    Regression test for https://github.com/Textualize/rich/issues/4176
+    """
+    console = Console(width=40, file=io.StringIO(), legacy_windows=False)
+    calls = []
+    orig_render_lines = Console.render_lines
+
+    def counting_render_lines(self, renderable, options, *args, **kwargs):
+        calls.append(renderable)
+        return orig_render_lines(self, renderable, options, *args, **kwargs)
+
+    Console.render_lines = counting_render_lines
+    try:
+        code = "\n".join(f"variable_{i} = {i}" for i in range(10))
+        syntax = Syntax(code, lexer="python", word_wrap=True)
+        console.print(syntax)
+    finally:
+        Console.render_lines = orig_render_lines
+    assert len(calls) == 1, f"expected a single render, got {len(calls)}"
+
+
+def test_word_wrap_no_line_numbers_output() -> None:
+    """Word wrapping without line numbers produces one output line per code line."""
+    console = Console(width=80, file=io.StringIO(), legacy_windows=False)
+    code = "\n".join(f"variable_{i} = {i}" for i in range(10))
+    syntax = Syntax(code, lexer="python", word_wrap=True)
+    console.print(syntax)
+    output = console.file.getvalue()
+    assert (
+        output == "\n".join(f"variable_{i} = {i}".ljust(80) for i in range(10)) + "\n"
+    )
+
+
+def test_word_wrap_transparent_background_not_padded() -> None:
+    """Transparent backgrounds shouldn't pad lines to the full width.
+
+    Regression test for https://github.com/Textualize/rich/issues/4176
+    """
+    console = Console(width=20, file=io.StringIO(), legacy_windows=False)
+    syntax = Syntax("x = 1", lexer="python", word_wrap=True, theme="ansi_dark")
+    console.print(syntax)
+    assert console.file.getvalue() == "x = 1\n"
+
+
+def test_word_wrap_empty_line_range_renders_nothing() -> None:
+    """An empty line range should render nothing.
+
+    Regression test for https://github.com/Textualize/rich/issues/4176
+    """
+    console = Console(width=20, file=io.StringIO(), legacy_windows=False)
+    syntax = Syntax("x = 1", lexer="python", word_wrap=True, line_range=(2, 4))
+    console.print(syntax)
+    assert console.file.getvalue() == ""
+
+
+def test_word_wrap_indent_guides() -> None:
+    """Word wrapping should work with indent guides and no line numbers."""
+    console = Console(width=20, file=io.StringIO(), legacy_windows=False)
+    syntax = Syntax("    x = 1\n", lexer="python", word_wrap=True, indent_guides=True)
+    console.print(syntax)
+    output = console.file.getvalue()
+    assert output == "│   x = 1" + " " * 11 + "\n" + " " * 20 + "\n"
+
+
 if __name__ == "__main__":
     syntax = Panel.fit(
         Syntax(

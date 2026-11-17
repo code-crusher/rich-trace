@@ -730,6 +730,23 @@ class Syntax(JupyterMixin):
             highlight_number_style,
         ) = self._get_number_styles(console)
 
+        if not self.line_numbers and self.word_wrap and lines:
+            # Simple case of no line numbers, and word wrapping enabled.
+            # Join the lines so they may be rendered in a single batch, rather
+            # than invoking the render pipeline once per line.
+            joined_lines = Text("\n").join(lines)
+            joined_lines.justify = lines[0].justify
+            wrapped_lines = console.render_lines(
+                joined_lines,
+                render_options.update(height=None, justify="left"),
+                style=background_style,
+                pad=not transparent_background,
+                new_lines=True,
+            )
+            for wrapped_line in wrapped_lines:
+                yield from wrapped_line
+            return
+
         for line_no, line in enumerate(lines, self.start_line + line_offset):
             if self.word_wrap:
                 wrapped_lines = console.render_lines(
