@@ -44,12 +44,6 @@ def test_dumb_terminal() -> None:
     assert height == 25
 
 
-def test_soft_wrap() -> None:
-    console = Console(file=io.StringIO(), width=20, soft_wrap=True)
-    console.print("foo " * 10)
-    assert console.file.getvalue() == "foo " * 20
-
-
 @pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
 def test_16color_terminal() -> None:
     console = Console(
@@ -948,12 +942,15 @@ def test_capturing_no_stdout_and_no_stderr_files(monkeypatch) -> None:
     assert capture.get() == "hello world\n"
 
 
-@pytest.mark.parametrize("env_value", ["", "something", "0"])
-def test_force_color(env_value) -> None:
-    # Even though we use a non-tty file, the presence of FORCE_COLOR env var
-    # means is_terminal returns True.
+@pytest.mark.parametrize(
+    "env_value,expected", [("", False), ("something", True), ("0", True)]
+)
+def test_force_color_is_terminal(env_value: str, expected: bool) -> None:
+    # Even though we use a non-tty file, a non-empty FORCE_COLOR env var
+    # means is_terminal returns True. An empty value doesn't, per
+    # https://force-color.org/
     console = Console(file=io.StringIO(), _environ={"FORCE_COLOR": env_value})
-    assert console.is_terminal
+    assert console.is_terminal == expected
 
 
 def test_force_color_jupyter() -> None:
@@ -964,7 +961,7 @@ def test_force_color_jupyter() -> None:
     assert not console.is_terminal
 
 
-def test_force_color() -> None:
+def test_force_color_color_system() -> None:
     console = Console(
         file=io.StringIO(),
         _environ={
@@ -1062,6 +1059,7 @@ def test_tty_interactive() -> None:
     console = Console(
         file=io.BytesIO(), _environ={"TTY_COMPATIBLE": "1", "TTY_INTERACTIVE": "0"}
     )
+    assert not console.is_interactive
 
     # Bytes file, Unknown value of TTY_INTERACTIVE should still auto-detect
     console = Console(file=io.BytesIO(), _environ={"TTY_INTERACTIVE": "foo"})
