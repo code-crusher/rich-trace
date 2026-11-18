@@ -137,6 +137,21 @@ def test_chop_cells_mixed_width():
 @pytest.mark.parametrize(
     "text,expected",
     [
+        ("hello", ["hello"]),
+        ("hello world", ["hello world"]),
+        ("你好", ["你好"]),
+        ("", [""]),
+    ],
+)
+def test_chop_cells_non_positive_width(text: str, expected: list[str]) -> None:
+    """Text can not be chopped in to zero (or negative) width lines."""
+    assert chop_cells(text, 0) == expected
+    assert chop_cells(text, -1) == expected
+
+
+@pytest.mark.parametrize(
+    "text,expected",
+    [
         ("", []),
         ("\x1b", []),
         ("\x1b\x1b", []),

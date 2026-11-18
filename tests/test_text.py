@@ -482,6 +482,13 @@ def test_wrap_wrapped_word_length_greater_than_available_width():
     ]
 
 
+def test_wrap_zero_width():
+    # https://github.com/Textualize/rich/issues/4234
+    text = Text("hello world")
+    lines = text.wrap(Console(), 0)
+    assert lines._lines == [Text(""), Text("")]
+
+
 def test_wrap_cjk():
     text = Text("わさび")
     lines = text.wrap(Console(), 4)
