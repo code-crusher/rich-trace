@@ -396,3 +396,74 @@ def test_recursive_exception() -> None:
             console.print_exception(show_locals=True)
 
     bar()
+
+
+def test_cyclic_exception_chain() -> None:
+    """Regression test for https://github.com/Textualize/rich/issues/4238
+
+    A chain that cycles through __cause__ and __context__ should not loop forever.
+
+    """
+    error = ValueError("inner")
+    try:
+        try:
+            try:
+                raise error
+            except ValueError as exc:
+                raise RuntimeError("outer") from exc
+        except RuntimeError:
+            raise error
+    except ValueError as exc:
+        caught = exc
+
+    assert caught.__context__ is not None
+    assert caught.__context__.__cause__ is caught
+
+    trace = Traceback.extract(type(caught), caught, caught.__traceback__)
+    assert [(stack.exc_type, stack.exc_value) for stack in trace.stacks] == [
+        ("ValueError", "inner"),
+        ("RuntimeError", "outer"),
+    ]
+
+    console = Console(file=io.StringIO(), width=100)
+    console.print(Traceback(trace, width=100))
+    rendered = console.file.getvalue()
+    assert "ValueError: inner" in rendered
+    assert "RuntimeError: outer" in rendered
+    assert "During handling of the above exception" in rendered
+
+
+def test_manual_exception_chain_cycle() -> None:
+    """A cycle built manually in __context__ doesn't loop forever."""
+
+    def foo() -> None:
+        error_1 = ValueError("one")
+        error_2 = ValueError("two")
+        error_1.__context__ = error_2
+        error_2.__context__ = error_1
+        raise error_1
+
+    console = Console(file=io.StringIO(), width=100)
+    try:
+        foo()
+    except ValueError as e:
+        console.print_exception()
+    rendered = console.file.getvalue()
+    assert "ValueError: one" in rendered
+    assert "ValueError: two" in rendered
+
+
+def test_unhashable_exception() -> None:
+    """An exception with an unhashable type doesn't break chain extraction."""
+
+    class UnhashableException(Exception):
+        __hash__ = None
+
+    error = UnhashableException("boom")
+    try:
+        raise error
+    except UnhashableException as e:
+        trace = Traceback.extract(type(e), e, e.__traceback__)
+    assert [(stack.exc_type, stack.exc_value) for stack in trace.stacks] == [
+        ("UnhashableException", "boom")
+    ]
