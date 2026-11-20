@@ -432,7 +432,7 @@ class Segment(NamedTuple):
         """
         _height = height or len(lines)
 
-        blank = (
+        blank: list["Segment"] = (
             [cls(" " * width + "\n", style)] if new_lines else [cls(" " * width, style)]
         )
 

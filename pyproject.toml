@@ -40,6 +40,7 @@ dev = [
     "black>=26",
     "mypy>=1.11",
     "pre-commit>=2.17.0",
+    "pyrefly>=1.4.0",
     "pytest>=7.0.0",
     "pytest-cov>=3.0.0",
     "typing-extensions>=4.0.0,<5.0",
@@ -72,3 +73,19 @@ testpaths = ["tests"]
 
 [tool.isort]
 profile = "black"
+
+[tool.pyrefly]
+project-includes = ["rich"]
+preset = "legacy"
+check-unannotated-defs = true
+infer-return-types = "never"
+ignore-missing-imports = ["pygments.*", "IPython.*", "ipywidgets.*"]
+
+[tool.pyrefly.errors]
+redundant-cast = "warn"
+redundant-condition = "error"
+implicit-any-parameter = "error"
+implicit-any-type-argument = "error"
+unannotated-return = "error"
+no-any-return = "error"
+untyped-import = false

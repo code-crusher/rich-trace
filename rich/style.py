@@ -219,7 +219,7 @@ class Style:
             color (Color | None): A (foreground) color, or None for no color. Defaults to None.
             bgcolor (Color | None): A (background) color, or None for no color. Defaults to None.
         """
-        style: Style = cls.__new__(Style)
+        style: Style = Style.__new__(Style)
         style._ansi = None
         style._style_definition = None
         style._color = color
@@ -240,7 +240,7 @@ class Style:
         Returns:
             meta (dict[str, Any] | None): A dictionary of meta data. Defaults to None.
         """
-        style: Style = cls.__new__(Style)
+        style: Style = Style.__new__(Style)
         style._ansi = None
         style._style_definition = None
         style._color = None
@@ -479,7 +479,7 @@ class Style:
         """Get a copy of the style with color removed."""
         if self._null:
             return NULL_STYLE
-        style: Style = self.__new__(Style)
+        style: Style = Style.__new__(Style)
         style._ansi = None
         style._style_definition = None
         style._color = None
@@ -631,7 +631,7 @@ class Style:
         """
         if self._null:
             return NULL_STYLE
-        style: Style = self.__new__(Style)
+        style: Style = Style.__new__(Style)
         style._ansi = self._ansi
         style._style_definition = self._style_definition
         style._color = self._color
@@ -654,7 +654,7 @@ class Style:
         """
         if self._null:
             return NULL_STYLE
-        style: Style = self.__new__(Style)
+        style: Style = Style.__new__(Style)
         style._ansi = self._ansi
         style._style_definition = self._style_definition
         style._color = self._color
@@ -677,7 +677,7 @@ class Style:
         Returns:
             Style: A new Style instance.
         """
-        style: Style = self.__new__(Style)
+        style: Style = Style.__new__(Style)
         style._ansi = self._ansi
         style._style_definition = self._style_definition
         style._color = self._color
@@ -735,7 +735,7 @@ class Style:
             return self
         if self._null:
             return style
-        new_style: Style = self.__new__(Style)
+        new_style: Style = Style.__new__(Style)
         new_style._ansi = None
         new_style._style_definition = None
         new_style._color = style._color or self._color

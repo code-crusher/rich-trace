@@ -92,6 +92,13 @@ def test_set_shape():
     ]
 
 
+def test_set_shape_new_lines():
+    assert Segment.set_shape([[Segment("Hello")]], 10, 2, new_lines=True) == [
+        [Segment("Hello"), Segment("     ")],
+        [Segment(" " * 10 + "\n")],
+    ]
+
+
 def test_simplify():
     assert list(
         Segment.simplify([Segment("Hello"), Segment(" "), Segment("World!")])

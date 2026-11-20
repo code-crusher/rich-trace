@@ -1972,7 +1972,7 @@ class Console:
         render_hooks = self._render_hooks[:]
 
         with self:
-            renderables = self._collect_renderables(
+            renderables: list[ConsoleRenderable] = self._collect_renderables(
                 objects,
                 sep,
                 end,

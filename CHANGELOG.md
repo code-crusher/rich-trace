@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dropped support for Python 3.9
 - Added support for Python 3.15
 - Switched from Poetry to uv for packaging and development
+- Added Pyrefly to the type checking tooling, alongside mypy https://github.com/Textualize/rich/issues/4200
 
 ## [15.0.0] - 2026-04-12
 

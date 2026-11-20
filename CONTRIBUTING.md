@@ -72,20 +72,23 @@ If any of the new lines you've added or modified appear in this report, you shou
 
 ### Type Checking
 
-Rich uses type annotations throughout, and `mypy` to do the checking.
+Rich uses type annotations throughout, and checks them with both `mypy` and
+[`pyrefly`](https://pyrefly.org).
 Run the following to type check Rich:
 
 ```
 make typecheck
+make typecheck-pyrefly
 ```
 
 Or if you don't have `make`:
 
 ```
 uv run mypy -p rich --no-incremental
+uv run pyrefly check
 ```
 
-Please add type annotations for all new code, and ensure that type checking succeeds before creating a pull request.
+Please add type annotations for all new code, and ensure that both type checkers succeed before creating a pull request.
 
 ### Code Formatting
 

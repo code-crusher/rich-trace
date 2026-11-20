@@ -220,6 +220,21 @@ def test_meta():
     assert repr(style) == "Style(bold=True, meta={'foo': 'bar', 'egg': 'baz'})"
 
 
+def test_from_color():
+    style = Style.from_color(Color.parse("red"))
+    assert style.color == Color.parse("red")
+    assert style.bgcolor is None
+    assert not style.bold
+
+    style = Style.from_color(Color.parse("red"), Color.parse("blue"))
+    assert style.color == Color.parse("red")
+    assert style.bgcolor == Color.parse("blue")
+
+    null_style = Style.from_color()
+    assert null_style.color is None
+    assert null_style.bgcolor is None
+
+
 def test_from_meta():
     style = Style.from_meta({"foo": "bar"})
     assert style.color is None

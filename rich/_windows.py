@@ -53,7 +53,7 @@ else:
         vt = bool(success and console_mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING)
         truecolor = False
         if vt:
-            win_version = sys.getwindowsversion()
+            win_version = sys.getwindowsversion()  # pyrefly: ignore[missing-attribute]
             truecolor = win_version.major > 10 or (
                 win_version.major == 10 and win_version.build >= 15063
             )

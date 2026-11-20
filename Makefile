@@ -8,6 +8,8 @@ format:
 	uv run black .
 typecheck:
 	uv run mypy -p rich --no-incremental
+typecheck-pyrefly:
+	uv run pyrefly check
 typecheck-report:
 	uv run mypy -p rich --html-report mypy_report
 .PHONY: docs
