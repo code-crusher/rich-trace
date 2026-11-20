@@ -71,6 +71,36 @@ def test_render():
     assert render() == expected
 
 
+def test_fixed_width_too_wide():
+    """https://github.com/Textualize/rich/issues/4214"""
+    console = Console(file=io.StringIO(), width=16, legacy_windows=False)
+    console.print(Columns([f"file_{i:02d}.txt" for i in range(8)], width=16))
+    assert console.file.getvalue() == (
+        "file_00.txt     \n"
+        "file_01.txt     \n"
+        "file_02.txt     \n"
+        "file_03.txt     \n"
+        "file_04.txt     \n"
+        "file_05.txt     \n"
+        "file_06.txt     \n"
+        "file_07.txt     \n"
+    )
+
+
+def test_zero_width():
+    """https://github.com/Textualize/rich/issues/4214"""
+    console = Console(file=io.StringIO(), width=16, legacy_windows=False)
+    console.print(Columns(["alpha", "beta"], width=0, padding=0))
+    # No exception; a single (zero width) column is rendered
+    assert console.file.getvalue() == "……              \n"
+
+
+def test_negative_width():
+    console = Console(file=io.StringIO(), width=16, legacy_windows=False)
+    console.print(Columns(["alpha", "beta"], width=-5, padding=0))
+    assert console.file.getvalue() == "\n"
+
+
 if __name__ == "__main__":
     result = render()
     print(result)
