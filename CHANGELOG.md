@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for Python 3.15
 - Switched from Poetry to uv for packaging and development
 
+### Fixed
+
+- Fixed `RichHandler` highlighting keywords such as `GET` within other words (e.g. `TARGET`) https://github.com/Textualize/rich/issues/4194
+
 ## [15.0.0] - 2026-04-12
 
 ### Changed

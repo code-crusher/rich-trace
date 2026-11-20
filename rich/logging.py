@@ -208,7 +208,9 @@ class RichHandler(Handler):
             self.keywords = self.KEYWORDS
 
         if self.keywords:
-            message_text.highlight_words(self.keywords, "logging.keyword")
+            message_text.highlight_words(
+                self.keywords, "logging.keyword", word_boundaries=True
+            )
 
         return message_text
 

@@ -159,3 +159,29 @@ def test_markup_and_highlight():
     render_plain = handler.console.file.getvalue()
     assert "FORMATTER" in render_plain
     assert log_message in render_plain
+
+
+def test_highlight_keywords_word_boundaries():
+    console = Console(
+        file=io.StringIO(),
+        force_terminal=True,
+        width=140,
+        color_system="truecolor",
+        _environ={},
+    )
+    handler = RichHandler(console=console, enable_link_path=False)
+    log.addHandler(handler)
+    try:
+        log.error("TARGET COMMITTEE POSTER AHEAD TRACER")
+        render = console.file.getvalue()
+        assert "TARGET COMMITTEE POSTER AHEAD TRACER" in render
+        # keywords within other words should not be highlighted
+        assert "\x1b[1;33m" not in render
+
+        console.file = io.StringIO()
+        log.error("GET /index.html 200 1298")
+        render = console.file.getvalue()
+        # standalone keywords should still be highlighted
+        assert "\x1b[1;33mGET\x1b[0m" in render
+    finally:
+        log.removeHandler(handler)

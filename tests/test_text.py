@@ -293,6 +293,33 @@ def test_highlight_words():
     assert count == 4
 
 
+def test_highlight_words_word_boundaries():
+    text = Text("Do NOT! touch anything!")
+    words = ["NOT", "!"]
+    count = text.highlight_words(words, "red", word_boundaries=True)
+    assert count == 1
+    assert text._spans == [Span(3, 6, "red")]  # NOT
+
+    # words within other words are not highlighted
+    text = Text("TARGET COMMITTEE POSTER AHEAD TRACER GET")
+    words = ["GET", "POST", "HEAD", "PUT", "DELETE", "OPTIONS", "TRACE", "PATCH"]
+    count = text.highlight_words(words, "red", word_boundaries=True)
+    assert count == 1
+    assert text._spans == [Span(37, 40, "red")]  # GET
+
+    # case insensitive word boundaries
+    text = Text("getting a GET")
+    count = text.highlight_words(["get"], "red", case_sensitive=False)
+    assert count == 2
+
+    text = Text("getting a GET")
+    count = text.highlight_words(
+        ["get"], "red", case_sensitive=False, word_boundaries=True
+    )
+    assert count == 1
+    assert text._spans == [Span(10, 13, "red")]
+
+
 def test_set_length():
     text = Text("Hello")
     text.set_length(5)

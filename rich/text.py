@@ -624,6 +624,7 @@ class Text(JupyterMixin):
         style: str | Style,
         *,
         case_sensitive: bool = True,
+        word_boundaries: bool = False,
     ) -> int:
         """Highlight words with a style.
 
@@ -631,11 +632,15 @@ class Text(JupyterMixin):
             words (Iterable[str]): Words to highlight.
             style (str | Style): Style to apply.
             case_sensitive (bool, optional): Enable case sensitive matching. Defaults to True.
+            word_boundaries (bool, optional): Highlight whole words only, so that words
+                contained within other words are not highlighted. Defaults to False.
 
         Returns:
             int: Number of words highlighted.
         """
         re_words = "|".join(re.escape(word) for word in words)
+        if word_boundaries:
+            re_words = rf"\b(?:{re_words})\b"
         add_span = self._spans.append
         count = 0
         _Span = Span
