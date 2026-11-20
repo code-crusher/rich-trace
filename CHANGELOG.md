@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for Python 3.15
 - Switched from Poetry to uv for packaging and development
 
+### Fixed
+
+- Fixed `Console.print` and `Console.log` dropping a `Text` object's own `justify`, `overflow`, `no_wrap`, and `tab_size` when the `Text` is passed as a lone argument https://github.com/Textualize/rich/issues/4216
+
 ## [15.0.0] - 2026-04-12
 
 ### Changed

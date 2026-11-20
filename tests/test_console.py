@@ -444,6 +444,27 @@ def test_justify_right() -> None:
     assert console.file.getvalue() == "                 FOO\n"
 
 
+def test_justify_text() -> None:
+    """A Text's own justify should be used when print is not given a justify."""
+    console = Console(file=io.StringIO(), force_terminal=True, width=20, _environ={})
+    console.print(Text("FOO", justify="center"))
+    assert console.file.getvalue() == "        FOO         \n"
+
+
+def test_justify_text_override() -> None:
+    """An explicit justify argument should take priority over the Text's own justify."""
+    console = Console(file=io.StringIO(), force_terminal=True, width=20, _environ={})
+    console.print(Text("FOO", justify="center"), justify="right")
+    assert console.file.getvalue() == "                 FOO\n"
+
+
+def test_justify_text_ignored_in_join() -> None:
+    """A Text's justify is not applied when it is joined with other text."""
+    console = Console(file=io.StringIO(), force_terminal=True, width=20, _environ={})
+    console.print("bar", Text("FOO", justify="center"))
+    assert console.file.getvalue() == "bar FOO\n"
+
+
 def test_justify_renderable_none() -> None:
     console = Console(
         file=io.StringIO(),

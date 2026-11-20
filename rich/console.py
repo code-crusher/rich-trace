@@ -1544,7 +1544,18 @@ class Console:
         def check_text() -> None:
             if text:
                 sep_text = Text(sep, justify=justify, end=end)
-                append(sep_text.join(text))
+                joined_text = sep_text.join(text)
+                if len(text) == 1:
+                    # A lone Text would lose its own justify, overflow, etc, in
+                    # the join above, so restore them from the original Text.
+                    # An explicit justify argument still takes priority.
+                    lone_text = text[0]
+                    if justify is None:
+                        joined_text.justify = lone_text.justify
+                    joined_text.overflow = lone_text.overflow
+                    joined_text.no_wrap = lone_text.no_wrap
+                    joined_text.tab_size = lone_text.tab_size
+                append(joined_text)
                 text.clear()
 
         for renderable in objects:
